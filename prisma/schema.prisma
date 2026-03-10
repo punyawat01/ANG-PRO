@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- VEHICLE STRUCTURE ---
+// e.g. Toyota
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  models    Model[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// e.g. Hilux
+model Model {
+  id        Int      @id @default(autoincrement())
+  name      String
+  brandId   Int
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  vehicles  Vehicle[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, name])
+}
+
+// The specific vehicle configuration (e.g. Toyota Hilux 2020)
+model Vehicle {
+  id              Int             @id @default(autoincrement())
+  modelId         Int
+  model           Model           @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  year            String          // Allow single year or start of a range
+  compatibilities Compatibility[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([modelId, year])
+}
+
+// --- PARTS STRUCTURE ---
+// e.g. Engine, Suspension, Brakes
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  parts     Part[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// e.g. Brake Pad X
+model Part {
+  id              Int             @id @default(autoincrement())
+  partNumber      String          @unique // รหัสอะไหล่
+  name            String          // ชื่ออะไหล่
+  partBrand       String?         // ยี่ห้อของตัวอะไหล่เอง (เช่น Brembo, แท้ศูนย์)
+  description     String?         // รายละเอียด
+  price           Float?          // ราคา (Optional, เผื่อไม่ต้องการใส่)
+  
+  // Dimensions
+  width           Float?          // กว้าง (มม. หรือ ซม.)
+  length          Float?          // ยาว
+  height          Float?          // สูง / High
+  innerDiameter   Float?          // รูใน (ID)
+  outerDiameter   Float?          // รูนอก (OD)
+
+  categoryId      Int?
+  category        Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  compatibilities Compatibility[] // รุ่นรถที่รองรับ
+  alternativeNumbers AlternativePartNumber[] // รหัสอะไหล่ทดแทน/OEM/โรงงาน
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// รหัสเทียบ รหัสOEM รหัสโรงงาน ที่เชื่อมกับสินค้าหลัก
+model AlternativePartNumber {
+  id              Int      @id @default(autoincrement())
+  partId          Int
+  part            Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  number          String   // รหัส OEM, โรงงาน
+  note            String?  // หมายเหตุว่าคือรหัสอะไร (เช่น "OEM", "โรงงาน")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([partId, number]) // ห้ามรหัสซ้ำในอะไหล่ชิ้นเดียวกัน
+}
+
+// --- CROSS REFERENCE ---
+// Links a Part to a specific Vehicle
+model Compatibility {
+  id        Int      @id @default(autoincrement())
+  partId    Int
+  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  notes     String?  // ข้อมูลเพิ่มเติมเช่น "เฉพาะรุ่นเครื่อง 2.4"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([partId, vehicleId])
+}
