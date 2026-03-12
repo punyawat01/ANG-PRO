@@ -88,13 +88,34 @@ export async function searchParts({
             for (const term of searchTerms) {
                 allConditions.push({
                     OR: [
-                        { partNumber: { contains: term } },
-                        { name: { contains: term } },
-                        { description: { contains: term } },
-                        { engineCode: { contains: term } },
+                        { partNumber: { contains: term, mode: 'insensitive' } },
+                        { name: { contains: term, mode: 'insensitive' } },
+                        { description: { contains: term, mode: 'insensitive' } },
+                        { engineCode: { contains: term, mode: 'insensitive' } },
                         {
                             alternativeNumbers: {
-                                some: { number: { contains: term } }
+                                some: { number: { contains: term, mode: 'insensitive' } }
+                            }
+                        },
+                        {
+                            compatibilities: {
+                                some: {
+                                    vehicle: {
+                                        OR: [
+                                            { year: { contains: term, mode: 'insensitive' } },
+                                            {
+                                                model: {
+                                                    OR: [
+                                                        { name: { contains: term, mode: 'insensitive' } },
+                                                        {
+                                                            brand: { name: { contains: term, mode: 'insensitive' } }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
                             }
                         }
                     ]
