@@ -54,11 +54,11 @@ export async function searchParts({
 }) {
     try {
         const vehicleFilter: any = {};
-        if (year) vehicleFilter.year = year;
+        if (year) vehicleFilter.year = { contains: year, mode: 'insensitive' };
         if (modelName || brandName) {
             vehicleFilter.model = {};
-            if (modelName) vehicleFilter.model.name = modelName;
-            if (brandName) vehicleFilter.model.brand = { name: brandName };
+            if (modelName) vehicleFilter.model.name = { contains: modelName, mode: 'insensitive' };
+            if (brandName) vehicleFilter.model.brand = { name: { contains: brandName, mode: 'insensitive' } };
         }
 
         const searchTerms = searchTerm ? searchTerm.split(/[+\s]+/).filter(Boolean) : [];
